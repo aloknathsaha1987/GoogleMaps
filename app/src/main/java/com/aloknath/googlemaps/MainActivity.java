@@ -1,6 +1,7 @@
 package com.aloknath.googlemaps;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import android.app.Dialog;
@@ -35,6 +36,8 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polygon;
+import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
@@ -50,6 +53,10 @@ public class MainActivity extends FragmentActivity
     Marker marker;
     Marker marker1;
     Polyline line;
+
+    ArrayList<Marker> markers = new ArrayList<Marker>();
+    static final int POLYGON_POINTS = 3;
+    Polygon shape;
 
 
     @Override
@@ -335,7 +342,9 @@ public class MainActivity extends FragmentActivity
 //        if(marker != null){
 //            marker.remove();
 //        }
-
+        if(markers.size() == POLYGON_POINTS){
+            removeEverything();
+        }
         MarkerOptions markerOptions = new MarkerOptions()
                 .title(locality)
                 .position(new LatLng(lat, lng))
@@ -348,25 +357,48 @@ public class MainActivity extends FragmentActivity
         if(country.length() > 0){
             markerOptions.snippet(country);
         }
-
-        if (marker == null){
-            marker = mMap.addMarker(markerOptions);
-        }else if (marker1 == null){
-
-            marker1 = mMap.addMarker(markerOptions);
-            drawLine();
-        }else {
-            removeEverything();
-            marker = mMap.addMarker(markerOptions);
+        markers.add(mMap.addMarker(markerOptions));
+        if(markers.size() == POLYGON_POINTS){
+            drawPolygon();
         }
+
+
+//        if (marker == null){
+//            marker = mMap.addMarker(markerOptions);
+//        }else if (marker1 == null){
+//
+//            marker1 = mMap.addMarker(markerOptions);
+//            drawLine();
+//        }else {
+//            removeEverything();
+//            marker = mMap.addMarker(markerOptions);
+//        }
+    }
+
+    private void drawPolygon(){
+        PolygonOptions options = new PolygonOptions()
+                .fillColor(0x330000FF)
+                .strokeWidth(3)
+                .strokeColor(Color.CYAN);
+        for (int i =0; i < POLYGON_POINTS; i++){
+            options.add(markers.get(i).getPosition());
+        }
+        shape = mMap.addPolygon(options);
     }
 
     private void removeEverything() {
-        marker.remove();
-        marker = null;
-        marker1.remove();
-        marker1 = null;
-        line.remove();
+
+        for (Marker marker: markers){
+            marker.remove();
+        }
+        markers.clear();
+        shape.remove();
+        shape = null;
+//        marker.remove();
+//        marker = null;
+//        marker1.remove();
+//        marker1 = null;
+//        line.remove();
     }
 
     private void drawLine() {

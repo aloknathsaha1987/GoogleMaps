@@ -5,6 +5,7 @@ import java.util.List;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -34,6 +35,8 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 public class MainActivity extends FragmentActivity
         implements GooglePlayServicesClient.ConnectionCallbacks, GooglePlayServicesClient.OnConnectionFailedListener, LocationListener{
@@ -45,6 +48,9 @@ public class MainActivity extends FragmentActivity
     GoogleMap mMap;
     LocationClient mLocationClient;
     Marker marker;
+    Marker marker1;
+    Polyline line;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,6 +129,60 @@ public class MainActivity extends FragmentActivity
                             tvSnippet.setText(marker.getSnippet());
                         }
                         return view;
+                    }
+
+                });
+                mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
+                    @Override
+                    public void onMapLongClick(LatLng latLng) {
+                        Geocoder geocoder = new Geocoder(MainActivity.this);
+                        List<Address> list = null;
+                        try {
+                            list = geocoder.getFromLocation(latLng.latitude, latLng.longitude,  1);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            return;
+                        }
+                        Address address = list.get(0);
+                        MainActivity.this.setMarker(address.getCountryName(), address.getLocality(), latLng.latitude, latLng.longitude);
+
+                    }
+                });
+                mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+                    @Override
+                    public boolean onMarkerClick(Marker marker) {
+                        String msg = marker.getTitle() + "(" + marker.getPosition().latitude +
+                                "," + marker.getPosition().longitude + ")";
+                        Toast.makeText(MainActivity.this, msg, Toast.LENGTH_LONG).show();
+                        return false;
+                    }
+                });
+
+                mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
+                    @Override
+                    public void onMarkerDragStart(Marker marker) {
+
+                    }
+
+                    @Override
+                    public void onMarkerDrag(Marker marker) {
+
+                    }
+
+                    @Override
+                    public void onMarkerDragEnd(Marker marker) {
+                        Geocoder geocoder = new Geocoder(MainActivity.this);
+                        List<Address> list = null;
+                        try {
+                            list = geocoder.getFromLocation(marker.getPosition().latitude, marker.getPosition().longitude, 1);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        Address address = list.get(0);
+                        //setMarker(address.getCountryName(), address.getLocality(), marker.getPosition().latitude, marker.getPosition().longitude);
+                        marker.setTitle(address.getLocality());
+                        marker.setSnippet(address.getCountryName());
+                        marker.showInfoWindow();
                     }
                 });
             }
@@ -259,12 +319,10 @@ public class MainActivity extends FragmentActivity
 
     @Override
     public void onDisconnected() {
-
     }
 
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
-
     }
 
     @Override
@@ -274,20 +332,49 @@ public class MainActivity extends FragmentActivity
     }
 
     public void setMarker(String country, String locality, double lat, double lng){
-        if(marker != null){
-            marker.remove();
-        }
+//        if(marker != null){
+//            marker.remove();
+//        }
 
         MarkerOptions markerOptions = new MarkerOptions()
                 .title(locality)
                 .position(new LatLng(lat, lng))
-//                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_launcher));
-                .icon(BitmapDescriptorFactory.defaultMarker(
-                        BitmapDescriptorFactory.HUE_CYAN
-                ));
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_launcher))
+                .anchor(.5f, .5f)
+//                .icon(BitmapDescriptorFactory.defaultMarker(
+//                        BitmapDescriptorFactory.HUE_CYAN
+//                ))
+                .draggable(true);
         if(country.length() > 0){
             markerOptions.snippet(country);
         }
-        marker = mMap.addMarker(markerOptions);
+
+        if (marker == null){
+            marker = mMap.addMarker(markerOptions);
+        }else if (marker1 == null){
+
+            marker1 = mMap.addMarker(markerOptions);
+            drawLine();
+        }else {
+            removeEverything();
+            marker = mMap.addMarker(markerOptions);
+        }
+    }
+
+    private void removeEverything() {
+        marker.remove();
+        marker = null;
+        marker1.remove();
+        marker1 = null;
+        line.remove();
+    }
+
+    private void drawLine() {
+        PolylineOptions options = new PolylineOptions()
+                .add(marker.getPosition())
+                .add(marker1.getPosition())
+                .color(Color.BLUE)
+                .width(5);
+        line = mMap.addPolyline(options);
     }
 }

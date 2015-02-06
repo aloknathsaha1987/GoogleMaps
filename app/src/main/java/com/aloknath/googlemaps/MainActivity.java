@@ -4,16 +4,19 @@ import java.io.IOException;
 import java.util.List;
 
 import android.app.Dialog;
+import android.content.Context;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -95,6 +98,34 @@ public class MainActivity extends FragmentActivity
             SupportMapFragment mapFrag =
                     (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
             mMap = mapFrag.getMap();
+
+            if(mMap != null ){
+                mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+                    @Override
+                    public View getInfoWindow(Marker marker) {
+                        return null;
+                    }
+
+                    @Override
+                    public View getInfoContents(Marker marker) {
+
+                        View view = getLayoutInflater().inflate(R.layout.info_window, null);
+                        TextView tvLocality = (TextView)view.findViewById(R.id.tv_locality);
+                        TextView tvLat = (TextView)view.findViewById(R.id.tv_lat);
+                        TextView tvLng = (TextView)view.findViewById(R.id.tv_lng);
+                        TextView tvSnippet = (TextView)view.findViewById(R.id.tv_snippet);
+
+                        if (marker != null) {
+                            LatLng latLng = marker.getPosition();
+                            tvLocality.setText(marker.getTitle());
+                            tvLat.setText("Latitude:" + latLng.latitude);
+                            tvLng.setText("Longitude:" + latLng.longitude);
+                            tvSnippet.setText(marker.getSnippet());
+                        }
+                        return view;
+                    }
+                });
+            }
         }
         return (mMap != null);
     }
